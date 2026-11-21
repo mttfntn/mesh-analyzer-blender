@@ -1,4 +1,10 @@
-"""Mesh reading and topology analysis. Everything is vectorized with numpy."""
+"""Mesh reading and topology analysis.
+
+CATEGORIES is the single source of truth for every check: props.py generates a toggle and a
+color property from it, ui.py lists it, draw.py colors by it. read_mesh() copies a Mesh into
+numpy arrays (MeshData) and analyze() turns those into one boolean mask per enabled category.
+Everything is vectorized; there are no Python loops over mesh elements.
+"""
 
 import numpy as np
 
@@ -55,6 +61,11 @@ def _int_attr(me, name, collection, prop, size, comps=1):
 
 
 def read_mesh(me):
+    """Copy the arrays the analysis and drawing need out of a Mesh.
+
+    Uses the fast attribute API where Blender provides it. Indices match the Mesh (and the
+    BMesh it came from), which is what lets operators map masks back to elements to select.
+    """
     d = MeshData()
     V, E, F, L = len(me.vertices), len(me.edges), len(me.polygons), len(me.loops)
 
@@ -86,7 +97,12 @@ def read_mesh(me):
 
 
 def analyze(d, enabled, tol):
-    """Return {category_id: bool mask} for every id in `enabled`."""
+    """Return {category_id: bool mask} for every id in `enabled`.
+
+    Masks are indexed by face, edge or vertex depending on the category's domain. `tol` is the
+    merge distance used by the zero-length/zero-area and overlap checks. Only enabled checks run,
+    so the expensive overlap checks cost nothing when switched off.
+    """
     V, E, F = d.counts
     want = enabled.__contains__
     m = {}

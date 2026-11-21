@@ -1,3 +1,6 @@
+"""Selection operators. They always analyze the base (unmodified) mesh, live in edit mode,
+because the indices of a modifier-evaluated mesh do not map back to editable elements."""
+
 import bmesh
 import bpy
 import numpy as np
@@ -45,6 +48,7 @@ def select_categories(context, ids, extend):
     return total
 
 
+# Select one category; Shift-click (invoke) extends the selection.
 class MESH_ANALYZER_OT_select_category(bpy.types.Operator):
     bl_idname = "mesh_analyzer.select_category"
     bl_label = "Select Category"
@@ -74,6 +78,7 @@ class MESH_ANALYZER_OT_select_category(bpy.types.Operator):
         return {"FINISHED"}
 
 
+# Select the union of all enabled categories.
 class MESH_ANALYZER_OT_select_all_flagged(bpy.types.Operator):
     bl_idname = "mesh_analyzer.select_all_flagged"
     bl_label = "Select All Flagged"
@@ -114,6 +119,7 @@ class MESH_ANALYZER_OT_deselect(bpy.types.Operator):
         return {"FINISHED"}
 
 
+# Drop the cache and recompute everything, e.g. after changes the handlers did not see.
 class MESH_ANALYZER_OT_refresh(bpy.types.Operator):
     bl_idname = "mesh_analyzer.refresh"
     bl_label = "Refresh"

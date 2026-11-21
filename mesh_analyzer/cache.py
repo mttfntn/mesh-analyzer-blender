@@ -1,4 +1,10 @@
-"""Per-object analysis cache, dirty tracking and debounced recompute."""
+"""Per-object analysis cache, dirty tracking and debounced recompute.
+
+Entries are keyed by object name. The depsgraph handler only flags entries dirty; the real
+work happens in _tick(), a bpy.app.timers callback scheduled ~30 ms later, so a burst of
+updates (e.g. while dragging a vertex) collapses into one recompute. GPU batches are built
+lazily by draw.py and dropped (batches = None) when only colors change.
+"""
 
 import bmesh
 import bpy
@@ -11,6 +17,8 @@ _TMP_MESH = ".mesh_analyzer_tmp"
 
 
 class Entry:
+    """Cached analysis of one object: MeshData, masks, counts and (lazily) GPU batches."""
+
     __slots__ = ("dirty", "data", "masks", "counts", "batches", "evaluated")
 
     def __init__(self):
@@ -43,6 +51,7 @@ def enabled_ids(s):
 
 
 def target_objects(context, s):
+    """Visible mesh objects the overlay covers, according to the Objects (scope) setting."""
     vl = context.view_layer
     if vl is None:
         return []
@@ -101,6 +110,8 @@ def read_base(obj):
 
 
 def read_source(obj, use_modifiers, depsgraph):
+    """Return (MeshData, evaluated): the modified mesh if requested and the object has
+    active modifiers, otherwise the base mesh."""
     if use_modifiers and _has_modifiers(obj):
         ob_eval = obj.evaluated_get(depsgraph)
         me = ob_eval.to_mesh()
@@ -114,6 +125,7 @@ def read_source(obj, use_modifiers, depsgraph):
 # ---------------------------------------------------------------- recompute
 
 def compute(obj, s, depsgraph):
+    """Analyze one object now and store the result; its GPU batches are rebuilt on the next draw."""
     e = _entries.get(obj.name)
     if e is None:
         e = _entries[obj.name] = Entry()
@@ -128,6 +140,7 @@ def compute(obj, s, depsgraph):
 
 
 def _tick():
+    """Timer callback: recompute dirty or missing entries of the targets, drop all other entries."""
     context = bpy.context
     s = settings(context)
     if s is None or not s.enabled:
@@ -151,17 +164,20 @@ def _tick():
 
 
 def schedule():
+    """Register the recompute timer unless it is already pending (the debounce)."""
     if not bpy.app.timers.is_registered(_tick):
         bpy.app.timers.register(_tick, first_interval=_DEBOUNCE)
 
 
 def invalidate_all():
+    """Mark every entry dirty and schedule a recompute (for settings that change the analysis)."""
     for e in _entries.values():
         e.dirty = True
     schedule()
 
 
 def recolor_all():
+    """Drop GPU batches so they are rebuilt with new colors, without re-analyzing."""
     for e in _entries.values():
         e.batches = None
     tag_redraw()
@@ -171,6 +187,7 @@ def recolor_all():
 
 @persistent
 def on_depsgraph_update(scene, depsgraph):
+    """Flag tracked objects whose geometry or mesh data changed, and schedule a recompute."""
     s = getattr(scene, "mesh_analyzer", None)
     if s is None or not s.enabled or not _entries:
         return

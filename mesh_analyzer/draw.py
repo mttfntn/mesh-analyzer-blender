@@ -1,4 +1,11 @@
-"""Viewport drawing: striped face shader, edge dashes, stacked vertex rings, face orientation."""
+"""Viewport drawing: striped face shader, edge dashes, stacked vertex rings, face orientation.
+
+build_batches() turns an Entry's masks into GPU batches; an element matching several categories
+gets up to MAX_SLOTS colors. Faces cycle those colors in screen-space diagonal stripes (custom
+shader), edges are split into dashes, vertices are drawn as shrinking concentric points.
+draw_callback() is the SpaceView3D POST_VIEW handler. Shaders need a GPU context, so they and
+the batches are created lazily inside the draw callback, never in the timer.
+"""
 
 import bpy
 import gpu
@@ -128,6 +135,7 @@ def _colors(s, ids):
 
 
 def build_batches(e, s):
+    """Build one Entry's GPU batches: {"faces", "edges", "verts" (list of rings), "orient"}."""
     d = e.data
     out = {}
 
@@ -209,6 +217,7 @@ def _depth_bias(bias):
 
 
 def _draw_entry(obj, e, s, region):
+    """Draw one object's batches in its world space, with a small depth bias over the mesh surface."""
     b = e.batches
     mw = obj.matrix_world
     gpu.matrix.push()
@@ -256,6 +265,7 @@ def _draw_entry(obj, e, s, region):
 
 
 def draw_callback():
+    """POST_VIEW draw handler: draw cached results and schedule a recompute when any is stale."""
     context = bpy.context
     s = cache.settings(context)
     if s is None or not s.enabled:

@@ -1,3 +1,10 @@
+"""Scene.mesh_analyzer settings.
+
+Global options are listed explicitly; for every entry in checks.CATEGORIES a show_<id> toggle
+and a col_<id> RGBA color (alpha = opacity) are generated. The update callbacks set how much work
+a change costs: analysis settings re-analyze, colors only rebuild batches, display sizes only redraw.
+"""
+
 import bpy
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty, PointerProperty
 

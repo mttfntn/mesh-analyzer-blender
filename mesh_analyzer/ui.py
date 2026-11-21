@@ -1,9 +1,13 @@
+"""Sidebar UI in the 3D Viewport, "Analyzer" tab: a main panel with global options and one
+sub-panel per domain (faces, edges, vertices) generated from checks.CATEGORIES."""
+
 import bpy
 
 from . import cache, checks
 
 
 def _totals(context, s):
+    """Sum cached counts over the target objects; also report whether any used modifiers."""
     totals = {}
     evaluated = False
     for obj in cache.target_objects(context, s):
@@ -51,6 +55,7 @@ class VIEW3D_PT_mesh_analyzer(bpy.types.Panel):
         row.operator("mesh_analyzer.refresh", text="", icon="FILE_REFRESH")
 
 
+# Shared layout of the Faces / Edges / Vertices sub-panels: toggle, label, count, color, select.
 class _DomainPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
