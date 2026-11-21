@@ -7,7 +7,6 @@ from . import overlap
 FACE, EDGE, VERT = "FACE", "EDGE", "VERT"
 
 DOMAIN_ICONS = {FACE: "FACESEL", EDGE: "EDGESEL", VERT: "VERTEXSEL"}
-DOMAIN_LABELS = {FACE: "Faces", EDGE: "Edges", VERT: "Vertices"}
 
 # id, label, domain, enabled by default, default color (sRGB + opacity)
 CATEGORIES = (

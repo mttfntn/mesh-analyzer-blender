@@ -116,7 +116,7 @@ def _slots(masks, ids, colors):
     return sel, np.minimum(cnt[sel], MAX_SLOTS), C
 
 
-def _domain_ids(e, s, domain):
+def _domain_ids(e, domain):
     return [cid for cid, _l, dom, *_ in checks.CATEGORIES if dom == domain and cid in e.masks]
 
 
@@ -130,7 +130,7 @@ def build_batches(e, s):
     d = e.data
     out = {}
 
-    ids = _domain_ids(e, s, checks.FACE)
+    ids = _domain_ids(e, checks.FACE)
     if ids and len(d.tp):
         sel, cnt, C = _slots(e.masks, ids, _colors(s, ids))
         if len(sel):
@@ -150,7 +150,7 @@ def build_batches(e, s):
                 "n": _f32(nv),
             })
 
-    ids = _domain_ids(e, s, checks.EDGE)
+    ids = _domain_ids(e, checks.EDGE)
     if ids and len(d.ev):
         sel, cnt, C = _slots(e.masks, ids, _colors(s, ids))
         if len(sel):
@@ -175,7 +175,7 @@ def build_batches(e, s):
                 "color": _f32(np.concatenate(col)),
             })
 
-    ids = _domain_ids(e, s, checks.VERT)
+    ids = _domain_ids(e, checks.VERT)
     if ids and len(d.co):
         sel, cnt, C = _slots(e.masks, ids, _colors(s, ids))
         if len(sel):
