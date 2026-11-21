@@ -121,6 +121,8 @@ Not applicable: this project is not a fork and has no upstream.
   it is removed on unregister.
 - `pyflakes` reports `undefined name 'Extend'` in `operators.py`: a false positive caused by Blender's
   property annotations (`extend: BoolProperty(name="Extend")`).
+- CI stores no artifacts on purpose: the account-wide artifact quota was full because of another
+  repository. The release job builds the zip itself and attaches it to the release.
 - Cache entries are keyed by object name; renaming an object simply creates a new entry.
 
 ## Known limits

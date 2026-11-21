@@ -23,7 +23,7 @@ jobs:
         blender: ["5.3"]
     name: Blender ${{ matrix.blender }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: System libraries for headless Blender (software OpenGL under Xvfb)
         run: |
@@ -48,11 +48,13 @@ jobs:
           xvfb-run -a -s "-screen 0 1280x1024x24" \
             "$BLENDER" -b --factory-startup --gpu-backend opengl --python tests/run_tests.py
 
+  # Builds the package to prove it builds. No artifact upload: the account-wide artifact quota can
+  # be full (other repos), and the release job builds its own copy anyway.
   build:
     needs: test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Download Blender
         run: bash .github/scripts/get_blender.sh 5.3 "$RUNNER_TEMP/blender"
@@ -61,23 +63,16 @@ jobs:
         run: |
           mkdir dist
           "$BLENDER" --factory-startup --command extension build --source-dir mesh_analyzer --output-dir dist
-          ls -l dist
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: package
-          path: dist/*.zip
-          retention-days: 3
-          if-no-files-found: error
+          unzip -l dist/*.zip
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: test
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # actions/checkout only fetches the commit; fetch the annotated tag object for its message.
       - name: Fetch the tag itself
@@ -92,10 +87,13 @@ jobs:
           git for-each-ref "refs/tags/$tag" --format='%(contents)' > "$RUNNER_TEMP/notes.md"
           cat "$RUNNER_TEMP/notes.md"
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: package
-          path: dist
+      - name: Download Blender
+        run: bash .github/scripts/get_blender.sh 5.3 "$RUNNER_TEMP/blender"
+
+      - name: Build extension package
+        run: |
+          mkdir dist
+          "$BLENDER" --factory-startup --command extension build --source-dir mesh_analyzer --output-dir dist
 
       - name: Publish release
         env:

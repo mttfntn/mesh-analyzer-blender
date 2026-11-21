@@ -48,12 +48,13 @@ select ─► operators.select_categories ─► cache.read_base + checks.analyz
 ## Pitfalls found in this project
 
 - `bpy.ops.mesh.primitive_uv_sphere_add` gives a different face order per call in 5.3 → never compare index-level results of primitives across runs; freeze meshes (the harness does).
-- `gpu` needs `gpu.init()` in background mode; verified headless on Windows (OpenGL and Vulkan); CI runs it with Mesa under Xvfb on Linux.
+- `gpu` needs `gpu.init()` in background mode; verified headless on Windows (OpenGL and Vulkan) and on GitHub's ubuntu-24.04 with Mesa under Xvfb.
 - `Mesh.attributes["position"]` is missing for a mesh that is in edit mode → `read_mesh` falls back to `vertices.foreach_get`. Read edit meshes via `cache.read_base` (BMesh → tmp mesh).
 - `loop_triangles` property is `polygon_index` (not `polygon`); faster: `Mesh.loop_triangle_polygons`.
 - Int attributes `.corner_vert`, `.corner_edge`, `.edge_verts` are read via `attributes[...].data.foreach_get("value")`, 1.7–3.5× faster than `loops.foreach_get` (measured on 4M corners).
 - `_inconsistent_winding` relies on in-order application of repeated fancy indices.
 - pyflakes false positive: `undefined name 'Extend'` from `BoolProperty(name="Extend")` annotations.
+- The GitHub account's artifact storage quota is shared by all repos and was full (another repo); the workflow therefore uploads no artifacts: the release job builds its own zip.
 - Background-mode `view_layer.objects` can hold a stale `None` right after `bpy.data.objects.remove`; call `view_layer.update()` first.
 
 ## How changes were verified (handover pass, 2026-11)
