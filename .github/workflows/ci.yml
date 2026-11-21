@@ -1,0 +1,107 @@
+name: tests
+
+# Push / PR: run the tests and build the package.
+# Push of a tag vX.Y.Z: additionally publish a GitHub release with the package attached and the
+# tag's annotation message as release notes.
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep in sync with blender_version_min/max in mesh_analyzer/blender_manifest.toml.
+        blender: ["5.3"]
+    name: Blender ${{ matrix.blender }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: System libraries for headless Blender (software OpenGL under Xvfb)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            xvfb libegl1 libgl1 libgl1-mesa-dri libglx-mesa0 libxi6 libxkbcommon0 libxkbcommon-x11-0 \
+            libsm6 libice6 libxrender1 libxxf86vm1 libxfixes3 libxext6 libx11-6 libwayland-client0
+
+      - name: Download Blender ${{ matrix.blender }}
+        run: bash .github/scripts/get_blender.sh "${{ matrix.blender }}" "$RUNNER_TEMP/blender"
+
+      - name: License copies match
+        run: cmp LICENSE mesh_analyzer/LICENSE
+
+      - name: Validate manifest
+        run: '"$BLENDER" --factory-startup --command extension validate mesh_analyzer'
+
+      - name: Run tests (Blender ${{ env.BLENDER_VERSION }})
+        env:
+          BLENDER_USER_RESOURCES: ${{ runner.temp }}/profile
+        run: |
+          xvfb-run -a -s "-screen 0 1280x1024x24" \
+            "$BLENDER" -b --factory-startup --gpu-backend opengl --python tests/run_tests.py
+
+  build:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Blender
+        run: bash .github/scripts/get_blender.sh 5.3 "$RUNNER_TEMP/blender"
+
+      - name: Build extension package
+        run: |
+          mkdir dist
+          "$BLENDER" --factory-startup --command extension build --source-dir mesh_analyzer --output-dir dist
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: dist/*.zip
+          retention-days: 3
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # actions/checkout only fetches the commit; fetch the annotated tag object for its message.
+      - name: Fetch the tag itself
+        run: git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
+
+      - name: Check tag against manifest and extract notes
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          [ "$(git cat-file -t "$tag")" = "tag" ] || { echo "::error::$tag is not an annotated tag (use git tag -a)"; exit 1; }
+          manifest_version="$(sed -n 's/^version = "\(.*\)"/\1/p' mesh_analyzer/blender_manifest.toml)"
+          [ "v$manifest_version" = "$tag" ] || { echo "::error::tag $tag != manifest version $manifest_version"; exit 1; }
+          git for-each-ref "refs/tags/$tag" --format='%(contents)' > "$RUNNER_TEMP/notes.md"
+          cat "$RUNNER_TEMP/notes.md"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "Mesh Analyzer ${GITHUB_REF_NAME}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag
