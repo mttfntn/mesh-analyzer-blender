@@ -123,7 +123,8 @@ def _domain_ids(e, domain):
 def _colors(s, ids):
     a = np.array([tuple(getattr(s, "col_" + i)) for i in ids], np.float64)
     a[:, 3] *= s.opacity
-    return a
+    # Cast once here: the GPU buffers are float32 and casting before or after indexing gives equal values.
+    return a.astype(np.float32)
 
 
 def build_batches(e, s):
@@ -139,14 +140,14 @@ def build_batches(e, s):
             r = row[d.tp]
             keep = r >= 0
             r = r[keep]
-            pos = d.co[d.tv[keep]].reshape(-1, 3)
-            Cv = np.repeat(C[r], 3, axis=0)
+            pos = d.co32[d.tv[keep]].reshape(-1, 3)
+            Cr = C[r]
             nv = np.repeat(cnt[r], 3)
             sh = _stripe_shader()
             out["faces"] = batch_for_shader(sh, "TRIS", {
-                "pos": _f32(pos),
-                "cA": _f32(Cv[:, 0]), "cB": _f32(Cv[:, 1]),
-                "cC": _f32(Cv[:, 2]), "cD": _f32(Cv[:, 3]),
+                "pos": pos,
+                "cA": np.repeat(Cr[:, 0], 3, axis=0), "cB": np.repeat(Cr[:, 1], 3, axis=0),
+                "cC": np.repeat(Cr[:, 2], 3, axis=0), "cD": np.repeat(Cr[:, 3], 3, axis=0),
                 "n": _f32(nv),
             })
 
@@ -156,7 +157,7 @@ def build_batches(e, s):
         if len(sel):
             ev = d.ev[sel]
             single = cnt == 1
-            pos = [d.co[ev[single]].reshape(-1, 3)]
+            pos = [d.co32[ev[single]].reshape(-1, 3)]
             col = [np.repeat(C[single, 0], 2, axis=0)]
             multi = ~single
             if multi.any():
@@ -186,14 +187,14 @@ def build_batches(e, s):
                 if not has.any():
                     break
                 rings.append(batch_for_shader(sh, "POINTS", {
-                    "pos": _f32(d.co[sel[has]]),
-                    "color": _f32(C[has, k]),
+                    "pos": d.co32[sel[has]],
+                    "color": C[has, k],
                 }))
             out["verts"] = rings
 
     if s.show_orientation and len(d.tv):
         out["orient"] = batch_for_shader(_orient_shader(), "TRIS", {
-            "pos": _f32(d.co[d.tv].reshape(-1, 3)),
+            "pos": d.co32[d.tv].reshape(-1, 3),
         })
     return out
 

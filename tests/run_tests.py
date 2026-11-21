@@ -136,6 +136,32 @@ def test_modifiers_and_edit_mode():
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
+def test_live_update():
+    print("live update: depsgraph handler -> dirty -> timer tick")
+    s = bpy.context.scene.mesh_analyzer
+    ob = mesh_obj("live", CUBE_V, faces=CUBE_F)
+    for o in bpy.context.view_layer.objects:
+        o.select_set(o == ob)
+    bpy.context.view_layer.objects.active = ob
+    s.scope = "SELECTED"
+    cache._tick()
+    check("tracked", cache.get(ob.name) is not None, True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    import bmesh
+    bm = bmesh.from_edit_mesh(ob.data)
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.poke(bm, faces=[bm.faces[0]])
+    bmesh.update_edit_mesh(ob.data)
+    bpy.context.view_layer.update()  # fires depsgraph_update_post
+    check("dirty after edit", cache.get(ob.name).dirty, True)
+    check("timer scheduled", bpy.app.timers.is_registered(cache._tick), True)
+    cache._tick()
+    check("tris after tick", cache.get(ob.name).counts["tris"], 4)
+    bpy.context.view_layer.update()
+    check("no self-triggered recompute", cache.get(ob.name).dirty, False)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
 def test_gpu():
     print("gpu shaders + batches + offscreen draw")
     import gpu

@@ -36,7 +36,7 @@ CAT_BY_ID = {c[0]: c for c in CATEGORIES}
 class MeshData:
     """Flat numpy copy of the mesh arrays needed for analysis and drawing."""
 
-    __slots__ = ("co", "ev", "ls", "lt", "lv", "le", "tv", "tp")
+    __slots__ = ("co", "co32", "ev", "ls", "lt", "lv", "le", "tv", "tp")
 
     @property
     def counts(self):
@@ -64,7 +64,8 @@ def read_mesh(me):
         pos.data.foreach_get("vector", co)
     else:
         me.vertices.foreach_get("co", co)
-    d.co = co.reshape(-1, 3).astype(np.float64)
+    d.co32 = co.reshape(-1, 3)  # as read; reused for GPU buffers without another conversion
+    d.co = d.co32.astype(np.float64)
 
     d.ev = _int_attr(me, ".edge_verts", me.edges, "vertices", E, 2)
     d.lv = _int_attr(me, ".corner_vert", me.loops, "vertex_index", L)
