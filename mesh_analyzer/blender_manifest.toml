@@ -1,0 +1,13 @@
+schema_version = "1.0.0"
+
+id = "mesh_analyzer"
+version = "1.0.0"
+name = "Mesh Analyzer"
+tagline = "Live overlay for tris, n-gons, poles, non-manifold and overlaps"
+maintainer = "Matteo Fontana"
+type = "add-on"
+
+blender_version_min = "5.0.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+tags = ["Mesh", "3D View"]
