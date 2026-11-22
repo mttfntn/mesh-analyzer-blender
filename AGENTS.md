@@ -66,14 +66,14 @@ select ─► operators.select_categories ─► cache.read_base + checks.analyz
 ## Release checklist
 
 1. Bump `version` in `mesh_analyzer/blender_manifest.toml`.
-2. Update static badges in `README.md` (repo is private: version, release).
+2. Nothing to change in `README.md`: the badges read the release and the manifest.
 3. Push to `main`, wait for the `tests` workflow to pass.
 4. `git tag -a vX.Y.Z -m "Title" -m "notes"` then `git push origin vX.Y.Z` (annotated tag required; must equal manifest version).
 5. Check the release has `mesh_analyzer-X.Y.Z.zip`; install it in a scratch profile and run a smoke test.
 
 ## Git setup
 
-- Remote `origin`: https://github.com/mttfntn/mesh-analyzer-blender.git (private). Default branch `main`.
+- Remote `origin`: https://github.com/mttfntn/mesh-analyzer-blender.git (public). Default branch `main`.
 - `.gitattributes` forces LF; `.gitignore` excludes `__pycache__/`, `*.pyc`, `dist/`.
 - Commit trailer used: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Not a fork; no upstream remote.

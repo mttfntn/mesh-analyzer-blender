@@ -92,7 +92,7 @@ Use the same `out/` folder for both runs (it holds the frozen test meshes).
 ## Making a release
 
 1. Set `version` in `mesh_analyzer/blender_manifest.toml` (e.g. `1.0.1`).
-2. Update the static badges in `README.md` (version and release badges are static because the repo is private).
+2. Nothing to change in `README.md`: its release, license and language badges read GitHub, and the Blender badge reads the manifest.
 3. Commit and push to `main`; wait for the `tests` workflow to pass.
 4. Create an **annotated** tag whose message is the release notes, and push it:
    ```bash

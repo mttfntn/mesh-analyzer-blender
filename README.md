@@ -1,10 +1,10 @@
 # Mesh Analyzer for Blender
 
-[![Blender](https://img.shields.io/badge/Blender-5.3-orange?logo=blender&logoColor=white)](mesh_analyzer/blender_manifest.toml)
-[![Release](https://img.shields.io/badge/release-v1.0.0-blue)](https://github.com/mttfntn/mesh-analyzer-blender/releases)
+[![Blender](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmttfntn%2Fmesh-analyzer-blender%2Fmain%2Fmesh_analyzer%2Fblender_manifest.toml&query=%24.blender_version_min&label=Blender&color=E87D0D&logo=blender&logoColor=white)](https://www.blender.org/download/)
+[![Release](https://img.shields.io/github/v/release/mttfntn/mesh-analyzer-blender)](https://github.com/mttfntn/mesh-analyzer-blender/releases/latest)
 [![tests](https://github.com/mttfntn/mesh-analyzer-blender/actions/workflows/ci.yml/badge.svg)](https://github.com/mttfntn/mesh-analyzer-blender/actions/workflows/ci.yml)
-[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-green)](LICENSE)
-[![Python](https://img.shields.io/badge/language-Python-3776AB?logo=python&logoColor=white)](mesh_analyzer)
+[![License](https://img.shields.io/github/license/mttfntn/mesh-analyzer-blender)](LICENSE)
+[![Language](https://img.shields.io/github/languages/top/mttfntn/mesh-analyzer-blender)](https://github.com/mttfntn/mesh-analyzer-blender)
 
 Live, color-coded topology overlay for the 3D Viewport.
 
